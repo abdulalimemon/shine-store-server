@@ -66,42 +66,35 @@ async function run() {
 
     // User Login Route
     app.post("/api/v1/login", async (req, res) => {
-      try {
-        const { email, password } = req.body;
+      const { email, password } = req.body;
 
-        // Check if user exists
-        const user = await collection.findOne({ email });
-        if (!user) {
-          return res.status(401).json({ message: "Invalid email or password" });
-        }
+      // Find user by email
+      const user = await collection.findOne({ email });
 
-        // Compare password with hashed password
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        if (!isPasswordValid) {
-          return res.status(401).json({ message: "Invalid email or password" });
-        }
-
-        // Generate JWT token
-        const token = jwt.sign(
-          { email: user.email, role: user.role },
-          process.env.JWT_SECRET,
-          {
-            expiresIn: process.env.EXPIRES_IN || "1h", // Fallback if EXPIRES_IN is undefined
-          }
-        );
-
-        // Send success response
-        res.json({
-          success: true,
-          message: "User successfully logged in!",
-          accessToken: token,
-        });
-      } catch (error) {
-        console.error("Login Error:", error);
-        return res
-          .status(500)
-          .json({ message: "Server error. Please try again." });
+      if (!user) {
+        return res.status(401).json({ message: "Invalid email or password" });
       }
+
+      // Compare hashed password
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      // Generate JWT token
+      const token = jwt.sign(
+        { email: user.email, name: user.name, role: user.role },
+        process.env.JWT_SECRET,
+        {
+          expiresIn: process.env.EXPIRES_IN,
+        }
+      );
+
+      res.json({
+        success: true,
+        message: "Login successful",
+        token,
+      });
     });
 
     // get all product
